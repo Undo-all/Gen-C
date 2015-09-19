@@ -1,8 +1,10 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances,
+             OverloadedStrings  #-}
 
 module AST where
 
 import Data.List (intercalate)
+import Data.String
 
 indent :: Int -> Name
 indent n = replicate (4*n) ' '
@@ -134,6 +136,9 @@ instance Num Expr where
 instance Fractional Expr where
     x / y = BinOp Div x y
     fromRational n = Literal (FloatingLit (fromRational n))
+
+instance IsString Expr where
+    fromString s = Literal (Identifier s)
 
 data Op = Add
         | Sub

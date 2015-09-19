@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module CGen where
 
 import AST
@@ -6,6 +8,7 @@ import Data.Maybe (fromMaybe)
 import Control.Monad.State
 import Control.Monad.Except
 import qualified Data.Map as M
+import Debug.Trace
 
 unwrapIntVariant :: Type -> IntVariant
 unwrapIntVariant (Integer x) = x
@@ -23,6 +26,7 @@ double = Floating Double
 void = Void
 ptr = Pointer
 array = Array
+returnC = Return
 
 data FnData = FnData { fnRet :: Type 
                      , fnName :: Name 
@@ -62,8 +66,9 @@ setScope name = do
 
 func :: Type -> Name -> [(Type, Name)] -> CGen Name
 func ret name args = do
+    putCurrentFunc
     modify $ \cg -> cg { currentFunc = FnData ret name args [] }
-    return name 
+    return name
 
 expr :: Expr -> CGen ()
 expr exp = do
@@ -72,8 +77,9 @@ expr exp = do
     modify $ \cg -> cg { currentFunc = newCf }
 
 test = do
-    fn <- func int "main" [(int, "argc"), (ptr (ptr char), "argv")]
-    setScope fn
-    expr (2 + 2 :: Expr)
+    add5 <- func int "add5" [(int, "x")]
+    expr $ returnC (2 + "x")
+    main <- func int "main" []
+    expr $ returnC 0
     return ()
 
