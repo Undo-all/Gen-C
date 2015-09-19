@@ -5,6 +5,7 @@ module CGen where
 import AST
 
 import Data.Maybe (fromMaybe)
+import Control.Arrow (second)
 import Control.Monad.State
 import Control.Monad.Except
 import qualified Data.Map as M
@@ -28,6 +29,8 @@ ptr = Pointer
 array = Array
 returnC = Return
 call = Call
+str = Literal . StringLit
+ident = Literal . Identifier
 
 data FnData = FnData { fnRet :: Type 
                      , fnName :: Name 
@@ -45,17 +48,23 @@ type CGen a = StateT CGenState (Except String) a
 
 runCGen :: CGen a -> Either String File
 runCGen cg = fmap prepare $ runExcept (execStateT (cg >> putCurrentFunc) defaultState)
-  where defaultState = CGenState cMain M.empty []
-        cMain = FnData int "main" [(int, "argc"), (ptr (ptr char), "argv")] []
-        prepare (CGenState _ fns f) = f ++ (map toFunc . map snd . M.toList) fns
-        toFunc (FnData ret name args body) = Func ret name args body
+  where defaultState                = CGenState cMain M.empty []
+        cMain                       = FnData int "main" [(int, "argc"), (ptr (ptr char), "argv")] []
+        prepare (CGenState _ fns f) = f ++ (declFuncs . map toFunc . map snd . M.toList) fns 
+        toFunc (FnData a b c d)     = Func a b c d
+        declFuncs = declFuncs' [] []
+        declFuncs' zs ys [] = ys ++ zs
+        declFuncs' zs ys ((Func ret name args body):xs) =
+          declFuncs' ((Func ret name args body):zs)
+                     ((FuncDecl ret name (map (second (const Nothing)) args)):ys)
+                     xs
 
 putCurrentFunc :: CGen ()
 putCurrentFunc = do
     funcs <- gets functions
     cf <- gets currentFunc
-    let newCf = cf { fnBody = reverse (fnBody cf) }
-    modify $ \cg -> cg { functions = M.insert (fnName cf) newCf (functions cg) }
+    --let newCf = cf { fnBody = reverse (fnBody cf) }
+    modify $ \cg -> cg { functions = M.insert (fnName cf) cf (functions cg) }
 
 setScope :: Name -> CGen ()
 setScope name = do

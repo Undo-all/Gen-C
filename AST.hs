@@ -157,7 +157,7 @@ instance Pretty Op where
     indentPretty i GR  = indent i ++ ">"
 
 instance Pretty Expr where
-    indentPretty i (Call n args)  = n ++ "(" ++ unlist (map pretty args) ++ ")"
+    indentPretty i (Call n args)  = indent i ++ n ++ "(" ++ unlist (map pretty args) ++ ")"
     indentPretty i (BinOp op x y) = indent i ++ "(" ++ pretty x ++ ") " ++ pretty op ++ " (" ++ pretty y ++ ")"
     indentPretty i (Return exp)   = indent i ++ "return " ++ pretty exp
     indentPretty i (Literal val)  = indentPretty i val
