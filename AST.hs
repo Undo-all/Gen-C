@@ -44,8 +44,8 @@ instance Pretty TopLevel where
     indentPretty i (FuncDecl ret name args) =
       indentPretty i ret ++ " " ++ name ++ "(" ++ unlist (map pretty args) ++ ");"
     indentPretty i (Func ret name args body) =
-      indentPretty i ret ++ " " ++ name ++ "(" ++ unlist (map pretty args) ++ ") {\n" ++
-      intercalate ";\n" (map (indentPretty (i+1)) body) ++ ";\n" ++ indent i ++ "}\n"
+      "\n" ++ indentPretty i ret ++ " " ++ name ++ "(" ++ unlist (map pretty args) ++ ") {\n" ++
+      intercalate ";\n" (map (indentPretty (i+1)) body) ++ ";\n" ++ indent i ++ "}"
 
 data Directive = Include Name
                | Pragma Name

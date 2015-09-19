@@ -27,6 +27,7 @@ void = Void
 ptr = Pointer
 array = Array
 returnC = Return
+call = Call
 
 data FnData = FnData { fnRet :: Type 
                      , fnName :: Name 
@@ -70,16 +71,21 @@ func ret name args = do
     modify $ \cg -> cg { currentFunc = FnData ret name args [] }
     return name
 
-expr :: Expr -> CGen ()
-expr exp = do
+include :: Name -> CGen ()
+include n = modify $ \cg -> cg { file = (Directive (Include n)) : file cg }
+
+body :: [Expr] -> CGen ()
+body exp = do
     cf <- gets currentFunc
-    let newCf = cf { fnBody = exp : fnBody cf }
+    let newCf = cf { fnBody = exp ++ fnBody cf }
     modify $ \cg -> cg { currentFunc = newCf }
 
+{-
 test = do
     add5 <- func int "add5" [(int, "x")]
-    expr $ returnC (2 + "x")
+    body [returnC ("x" + 5)]
     main <- func int "main" []
-    expr $ returnC 0
+    body [returnC 0]
+    include "<stdio.h>"
     return ()
-
+-}
