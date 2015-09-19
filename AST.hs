@@ -198,6 +198,6 @@ instance Pretty Expr where
     indentPretty i (DoWhile xs cond)  = indent i ++ "do" ++ block i xs ++
                                        " while (" ++ pretty cond ++ ");\n\n"
     indentPretty i (If xs Nothing)    = pretty xs ++ "\n\n"
-    indentPretty i (If xs (Just els)) = pretty xs ++ " else" ++ block i els 
+    indentPretty i (If xs (Just els)) = pretty xs ++ " else" ++ block i els ++ "\n\n"
 
 

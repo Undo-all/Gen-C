@@ -1,0 +1,13 @@
+Name: CGen
+Version: 0.0.1
+Cabal-version: >= 1.2
+Author: undoall
+Category: Language
+Synopsis: A library for generating C code
+Build-type: Simple
+
+Library
+    Build-Depends: base, mtl, containers
+    Exposed-modules:
+        AST, CGen
+
