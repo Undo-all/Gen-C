@@ -33,6 +33,11 @@ ident = Literal . Identifier
 call = Call
 assign = Assign
 declare = Declare
+while = While
+doWhile = DoWhile
+
+cIf :: [(Expr, [Expr])] -> Maybe [Expr] -> Expr
+cIf xs els = If (map (uncurry IfClause) xs) els
 
 data FnData = FnData { fnRet :: Type 
                      , fnName :: Name 

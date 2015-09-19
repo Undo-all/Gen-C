@@ -141,7 +141,7 @@ instance Num Expr where
     x * y = BinOp Mul x y
     fromInteger n = Literal (IntegerLit (fromInteger n))
     abs x = Call "abs" [x]
-    signum x = BinOp Sub (BinOp GR x (Literal (IntegerLit 0))) (BinOp LS x (Literal (IntegerLit 0)))
+    signum x = BinOp Sub (BinOp Gt x (Literal (IntegerLit 0))) (BinOp Lt x (Literal (IntegerLit 0)))
 
 instance Fractional Expr where
     x / y = BinOp Div x y
@@ -154,8 +154,10 @@ data Op = Add
         | Sub
         | Mul
         | Div
-        | LS
-        | GR
+        | Eql
+        | Neq
+        | Lt
+        | Gt
         deriving (Eq, Show)
 
 instance Pretty Op where
@@ -163,8 +165,10 @@ instance Pretty Op where
     indentPretty i Sub = indent i ++ "-"
     indentPretty i Mul = indent i ++ "*"
     indentPretty i Div = indent i ++ "/"
-    indentPretty i LS  = indent i ++ "<"
-    indentPretty i GR  = indent i ++ ">"
+    indentPretty i Eql = indent i ++ "=="
+    indentPretty i Neq = indent i ++ "!="
+    indentPretty i Lt  = indent i ++ "<"
+    indentPretty i Gt  = indent i ++ ">"
 
 data IfClause = IfClause Expr [Expr]
               deriving (Eq, Show)
