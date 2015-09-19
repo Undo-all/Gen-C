@@ -51,10 +51,10 @@ data CGenState = CGenState
                , file :: [TopLevel]
                } deriving (Eq, Show)
 
-type CGen a = StateT CGenState (Except String) a
+type CGen a = State CGenState a
 
-runCGen :: CGen a -> Either String File
-runCGen cg = fmap prepare $ runExcept (execStateT (cg >> putCurrentFunc) defaultState)
+runCGen :: CGen a -> File
+runCGen cg = prepare $ execState (cg >> putCurrentFunc) defaultState
   where defaultState                = CGenState cMain M.empty []
         cMain                       = FnData int "main" [(int, "argc"), (ptr (ptr char), "argv")] []
         prepare (CGenState _ fns f) = f ++ (declFuncs . map toFunc . map snd . M.toList) fns 
@@ -79,7 +79,7 @@ setScope name = do
     funcs <- gets functions
     case M.lookup name funcs of
       Just f  -> modify $ \cg -> cg { currentFunc = f }
-      Nothing -> throwError $ "not in scope: " ++ name
+      Nothing -> error $ "setScope: '" ++ name ++ "' is not in scope."
 
 func :: Type -> Name -> [(Type, Name)] -> CGen Name
 func ret name args = do
