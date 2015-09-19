@@ -12,6 +12,10 @@ indent n = replicate (4*n) ' '
 unlist :: [Name] -> Name
 unlist = intercalate ", "
 
+block :: Int -> [Expr] -> String
+block i xs = " {\n" ++ intercalate ";\n" (map (indentPretty (i+1)) xs) ++ 
+             ";\n" ++ indent i ++ "}"
+
 type Name = String
 
 class Pretty a where
@@ -38,14 +42,15 @@ instance Pretty (Type, Maybe Name) where
     indentPretty i (t, Nothing) = indentPretty i t 
 
 instance Pretty TopLevel where
-    indentPretty i (Directive d)         = indentPretty i d
-    indentPretty i (Global t n Nothing)  = indentPretty i t ++ " " ++ n ++ ";"
-    indentPretty i (Global t n (Just v)) = indentPretty i t ++ " " ++ n ++ " = " ++ pretty v ++ ";"
-    indentPretty i (FuncDecl ret name args) =
+    indentPretty i (Directive d)             = indentPretty i d
+    indentPretty i (Global t n Nothing)      = indentPretty i t ++ " " ++ n ++ ";"
+    indentPretty i (Global t n (Just v))     = 
+      indentPretty i t ++ " " ++ n ++ " = " ++ pretty v ++ ";"
+    indentPretty i (FuncDecl ret name args)  =
       indentPretty i ret ++ " " ++ name ++ "(" ++ unlist (map pretty args) ++ ");"
     indentPretty i (Func ret name args body) =
-      "\n" ++ indentPretty i ret ++ " " ++ name ++ "(" ++ unlist (map pretty args) ++ ") {\n" ++
-      intercalate ";\n" (map (indentPretty (i+1)) body) ++ ";\n" ++ indent i ++ "}"
+      "\n" ++ indentPretty i ret ++ " " ++ name ++ "(" ++
+      unlist (map pretty args) ++ ")" ++ block i body
 
 data Directive = Include Name
                | Pragma Name
@@ -121,6 +126,11 @@ instance Pretty Constant where
 
 data Expr = Call Name [Expr]
           | BinOp Op Expr Expr
+          | Declare Type Name (Maybe Expr)
+          | Assign Name Expr
+          | While Expr [Expr]
+          | DoWhile [Expr] Expr
+          | If [IfClause] (Maybe [Expr])
           | Return Expr
           | Literal Constant
           deriving (Eq, Show)
@@ -156,9 +166,34 @@ instance Pretty Op where
     indentPretty i LS  = indent i ++ "<"
     indentPretty i GR  = indent i ++ ">"
 
+data IfClause = IfClause Expr [Expr]
+              deriving (Eq, Show)
+
+instance Pretty [IfClause] where
+    indentPretty i xs = prettyIf i (head xs) ++ prettyRest i (tail xs)
+      where prettyIf i (IfClause cond body) = 
+              indent i ++ "if (" ++ pretty cond ++ ")" ++ block i body
+            prettyRest i xs = concat $ map (prettyElseIf i) xs
+            prettyElseIf i (IfClause cond body) = 
+              " else if (" ++ pretty cond ++ ")" ++ block i body 
+
 instance Pretty Expr where
-    indentPretty i (Call n args)  = indent i ++ n ++ "(" ++ unlist (map pretty args) ++ ")"
-    indentPretty i (BinOp op x y) = indent i ++ "(" ++ pretty x ++ ") " ++ pretty op ++ " (" ++ pretty y ++ ")"
-    indentPretty i (Return exp)   = indent i ++ "return " ++ pretty exp
-    indentPretty i (Literal val)  = indentPretty i val
+    indentPretty i (Call n args)      = 
+      indent i ++ n ++ "(" ++ unlist (map pretty args) ++ ")"
+    indentPretty i (BinOp op x y)     = 
+      indent i ++ "(" ++ pretty x ++ ") " ++ pretty op ++ " (" ++ pretty y ++ ")"
+    indentPretty i (Declare t n v)    = 
+      case v of
+        Just val -> indentPretty i t ++ " " ++ n ++ " = " ++ pretty val
+        Nothing  -> indentPretty i t ++ " " ++ n
+    indentPretty i (Assign n val)     = indent i ++ n ++ " = " ++ pretty val
+    indentPretty i (Return exp)       = indent i ++ "return " ++ pretty exp
+    indentPretty i (Literal val)      = indentPretty i val
+    -- Control flow
+    indentPretty i (While cond xs)    = indent i ++ "while (" ++ pretty cond ++ ")" ++ block i xs
+    indentPretty i (DoWhile xs cond)  = indent i ++ "do" ++ block i xs ++
+                                       " while (" ++ pretty cond ++ ");\n\n"
+    indentPretty i (If xs Nothing)    = pretty xs ++ "\n\n"
+    indentPretty i (If xs (Just els)) = pretty xs ++ " else" ++ block i els 
+
 

@@ -8,7 +8,7 @@ import Data.Maybe (fromMaybe)
 import Control.Arrow (second)
 import Control.Monad.State
 import Control.Monad.Except
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import Debug.Trace
 
 unwrapIntVariant :: Type -> IntVariant
@@ -28,9 +28,11 @@ void = Void
 ptr = Pointer
 array = Array
 returnC = Return
-call = Call
 str = Literal . StringLit
 ident = Literal . Identifier
+call = Call
+assign = Assign
+declare = Declare
 
 data FnData = FnData { fnRet :: Type 
                      , fnName :: Name 
@@ -63,8 +65,8 @@ putCurrentFunc :: CGen ()
 putCurrentFunc = do
     funcs <- gets functions
     cf <- gets currentFunc
-    --let newCf = cf { fnBody = reverse (fnBody cf) }
-    modify $ \cg -> cg { functions = M.insert (fnName cf) cf (functions cg) }
+    let newCf = cf { fnBody = reverse (fnBody cf) }
+    modify $ \cg -> cg { functions = M.insert (fnName cf) newCf (functions cg) }
 
 setScope :: Name -> CGen ()
 setScope name = do
@@ -86,15 +88,6 @@ include n = modify $ \cg -> cg { file = (Directive (Include n)) : file cg }
 body :: [Expr] -> CGen ()
 body exp = do
     cf <- gets currentFunc
-    let newCf = cf { fnBody = exp ++ fnBody cf }
+    let newCf = cf { fnBody = reverse exp ++ fnBody cf }
     modify $ \cg -> cg { currentFunc = newCf }
 
-{-
-test = do
-    add5 <- func int "add5" [(int, "x")]
-    body [returnC ("x" + 5)]
-    main <- func int "main" []
-    body [returnC 0]
-    include "<stdio.h>"
-    return ()
--}
