@@ -61,6 +61,7 @@ data Type = Integer IntVariant
           | Struct Name
           | Union Name
           | Enum Name
+          | Void
           deriving (Eq, Show)
 
 instance Pretty Type where
